@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Toko Elektronik Jaya</title>
+
+<!-- BOOTSTRAP -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+:root {
+    --bg: #f5f5f5;
+    --text: #000;
+    --card: #fff;
+}
+
+.dark {
+    --bg: #121212;
+    --text: #fff;
+    --card: #1e1e1e;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+header {
+    background: linear-gradient(90deg, #0d6efd, #0a58ca);
+    color: white;
+    padding: 40px 0;
+    text-align: center;
+}
+
+.card {
+    background: var(--card);
+    color: var(--text);
+}
+
+.product-card img {
+    height: 180px;
+    object-fit: cover;
+}
+
+.price {
+    color: #198754;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.cart-badge {
+    background: red;
+    color: white;
+    border-radius: 50%;
+    padding: 3px 8px;
+    font-size: 12px;
+}
+
+footer {
+    background: #212529;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    margin-top: 40px;
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">Elektronik Jaya</a>
+
+        <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="nav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="toggleCart()">
+                        Cart <span id="cartCount" class="cart-badge">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <button class="btn btn-outline-light btn-sm ms-2" onclick="toggleDark()">
+                        🌙
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- HEADER -->
+<header id="home">
+    <h1>Toko Elektronik Jaya</h1>
+    <p>Menjual berbagai barang elektronik berkualitas</p>
+</header>
+
+<!-- SEARCH -->
+<section class="container mt-4">
+    <input type="text" id="search" class="form-control" placeholder="Cari produk..." onkeyup="renderProducts()">
+</section>
+
+<!-- PRODUK -->
+<section class="container mt-4">
+    <div class="row g-4" id="productList"></div>
+</section>
+
+<!-- CART -->
+<section id="cartSection" class="container mt-5" style="display:none">
+    <h3>Keranjang Belanja</h3>
+    <ul id="cartList" class="list-group mb-3"></ul>
+    <h5>Total: Rp <span id="total">0</span></h5>
+    <button class="btn btn-success" onclick="checkoutWA()">Checkout WhatsApp</button>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="container mt-5">
+    <h3 class="text-center">Tentang Kami</h3>
+    <p class="text-center">
+        Toko Elektronik Jaya menyediakan berbagai produk elektronik
+        dengan harga terjangkau dan kualitas terbaik.
+    </p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    © 2026 Toko Elektronik Jaya
+</footer>
+
+<script>
+const products = [
+    {name:"Televisi LED", price:2500000, img:"television"},
+    {name:"Kulkas", price:3200000, img:"refrigerator"},
+    {name:"Mesin Cuci", price:2000000, img:"washing-machine"},
+    {name:"Kipas Angin", price:350000, img:"fan"},
+    {name:"Rice Cooker", price:600000, img:"rice-cooker"}
+];
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let dark = localStorage.getItem("dark") === "true";
+
+if(dark) document.body.classList.add("dark");
+
+function toggleDark() {
+    dark = !dark;
+    document.body.classList.toggle("dark");
+    localStorage.setItem("dark", dark);
+}
+
+function saveCart() {
+    localStorage.setItem("cart", JSON.stringify(cart));
+}
+
+function renderProducts() {
+    const keyword = search.value.toLowerCase();
+    productList.innerHTML = "";
+
+    products.filter(p =>
+        p.name.toLowerCase().includes(keyword)
+    ).forEach((p,i) => {
+        productList.innerHTML += `
+        <div class="col-md-4">
+            <div class="card product-card">
+                <img src="https://source.unsplash.com/400x300/?${p.img}">
+                <div class="card-body text-center">
+                    <h5>${p.name}</h5>
+                    <p class="price">Rp ${p.price}</p>
+                    <button class="btn btn-success" onclick="addCart(${i})">
+                        Tambah ke Cart
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    });
+}
+
+function addCart(index) {
+    const item = products[index];
+    const found = cart.find(c => c.name === item.name);
+
+    if(found) found.qty++;
+    else cart.push({...item, qty:1});
+
+    saveCart();
+    updateCartCount();
+}
+
+function updateCartCount() {
+    cartCount.innerText = cart.reduce((a,b)=>a+b.qty,0);
+}
+
+function toggleCart() {
+    cartSection.style.display =
+        cartSection.style.display === "none" ? "block" : "none";
+    renderCart();
+}
+
+function renderCart() {
+    cartList.innerHTML = "";
+    let total = 0;
+
+    cart.forEach((item,i)=>{
+        total += item.price * item.qty;
+        cartList.innerHTML += `
+        <li class="list-group-item d-flex justify-content-between">
+            ${item.name} x${item.qty}
+            <button class="btn btn-sm btn-danger" onclick="removeItem(${i})">Hapus</button>
+        </li>`;
+    });
+
+    document.getElementById("total").innerText = total;
+}
+
+function removeItem(i) {
+    cart.splice(i,1);
+    saveCart();
+    updateCartCount();
+    renderCart();
+}
+
+function checkoutWA() {
+    let text = "Halo, saya ingin membeli:%0A";
+    let total = 0;
+
+    cart.forEach(item=>{
+        text += `- ${item.name} x${item.qty} (Rp ${item.price * item.qty})%0A`;
+        total += item.price * item.qty;
+    });
+
+    text += `%0ATotal: Rp ${total}`;
+    window.open("https://wa.me/6281234567890?text="+text);
+}
+
+renderProducts();
+updateCartCount();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
